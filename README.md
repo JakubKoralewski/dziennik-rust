@@ -1,4 +1,4 @@
-# dziennik_php_rust
+# dziennik_rust
 
 ## Develop
 
@@ -21,7 +21,7 @@ $ cargo run-script dev
     - https://github.com/ryanmcgrath/jelly
 
 
-## Entry points
+## Entry points (CRUD)
 
 ### Postman Collection: [docs/dziennik_rust.postman_collection.json](docs/dziennik_rust.postman_collection.json)
 
@@ -33,12 +33,14 @@ $ cargo run-script dev
     - POST (login, password):
       - credentials for login 
   - ### students
-    - GET ():
+    - GET:
       - get all students
-    - POST (first_name, last_name):
+      - array of Student object
+    - POST body: (first_name, last_name):
       - check if student exists
       - add student
-    - DELETE (id):
-      - delete student
-    - PUT (id, new_data):
-      - edit existing student
+    - /{id}
+      - DELETE:
+        - delete student
+      - PUT body:(new_student):
+        - edit existing student
