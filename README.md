@@ -1,4 +1,10 @@
-# dziennik_rust
+<!---
+  MIT License
+  Copyright (c) 2019 Jakub Koralewski
+-->
+# dziennik-rust
+
+A simple CRUD backend application using Rust with actix-web, Diesel and PostgreSQL.
 
 ## Develop
 
@@ -8,6 +14,8 @@ $ cargo run-script dev
 ```
 
 ## *Inspired* by
+
+I've used these sources to learn these topics:
 
 - actix:
   - json: https://github.com/actix/examples/blob/master/json/src/main.rs
@@ -19,6 +27,11 @@ $ cargo run-script dev
         - actix, postgresql, tera for templates, diesel for ORM
   - full fetched project:
     - https://github.com/ryanmcgrath/jelly
+- diesel:
+  - official Getting Started Guide:
+    - https://diesel.rs/guides/getting-started/
+  - official README:
+    - https://github.com/diesel-rs/diesel/blob/master/diesel_cli/README.md
 
 
 ## Entry points (CRUD)
@@ -39,6 +52,7 @@ $ cargo run-script dev
     - POST body: (first_name, last_name):
       - check if student exists
       - add student
+      - return new_student
     - /{id}
       - DELETE:
         - delete student
