@@ -4,27 +4,32 @@
 use super::*;
 use super::imports::*;
 
-pub fn update((request, id, updated_student): (HttpRequest<State>, Path<i32>, Json<UpdateRequest>)) -> HttpResponse {
-    let updated_student = request.state().db
-        .send(UpdateStudent{id: id.clone(), fields: updated_student.into_inner()})
-        .wait()
-        .expect("Future didn't resolve");
-    
-    if let Ok(student) = updated_student {
-        HttpResponse::Ok().json(
-            UpdateResponse{ 
-                message: format!("Updated student with id: {:?}.", id),
-                student: Some(student),
+pub fn update((request, id, updated_student): (HttpRequest<State>, Path<i32>, Json<UpdateRequest>)) 
+    -> Box<Future<Item = HttpResponse, Error = actix_web::Error>> 
+{
+    request.state().db
+        .send(UpdateStudent {
+            id: id.clone(),
+            fields: updated_student.into_inner()
+        })
+        .from_err()
+        .and_then(move |updated_student| {
+            if let Ok(student) = updated_student {
+                Ok(HttpResponse::Ok().json(
+                    UpdateResponse{ 
+                        message: format!("Updated student with id: {:?}.", id),
+                        student: Some(student),
+                    }
+                ))
+            } else {
+                Ok(HttpResponse::BadRequest().json(
+                    UpdateResponse { 
+                        message: format!("Something went wrong. User with id of {} may not exist.", id),
+                        student: None,
+                    }
+                ))
             }
-        )
-    } else {
-        HttpResponse::BadRequest().json(
-            UpdateResponse { 
-                message: format!("Something went wrong. User with id of {} may not exist.", id),
-                student: None,
-            }
-        )
-    }
+        }).responder()
 }
 
 // use of undeclared type or module `student_fieldss`

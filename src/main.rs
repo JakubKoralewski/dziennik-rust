@@ -17,8 +17,11 @@ use actix_web::{
     error,
     HttpRequest,
     HttpResponse,
-    dev::JsonConfig,
-    actix::{SyncArbiter, Addr, System},
+    actix::{
+        SyncArbiter,
+        Addr,
+        System
+    }
 };
 use std::env;
 use dotenv::dotenv;
@@ -33,7 +36,19 @@ struct JsonError {
     message: String,
 }
 
+
+/// Handles returning info to client about errors
+/// regarding the json request body.
 fn json_error_handler(err: error::JsonPayloadError, _req: &HttpRequest<State>) -> error::Error {
+    let description = JsonError{message: format!("{}", err)};
+    error::InternalError::from_response(
+        err, HttpResponse::BadRequest().json(description)
+    ).into()
+}
+
+/// Handles returning info to client about errors
+/// regarding the id supplied in the path.
+fn path_error_handler(err: serde::de::value::Error, _req: &HttpRequest<State>) -> error::Error {
     let description = JsonError{message: format!("{}", err)};
     error::InternalError::from_response(
         err, HttpResponse::BadRequest().json(description)
@@ -81,16 +96,19 @@ fn main() {
                 |students_scope| {
                     students_scope
                         .resource("", |r| {
-                            r.method(Method::POST).with_config(students::create, |cfg: &mut ((((), JsonConfig<State>),))| {
+                            r.method(Method::POST).with_async_config(students::create, |cfg| {
                                 (cfg.0).1.error_handler(&json_error_handler);
                             });
-                            r.method(Method::GET).f(students::read);
+                            r.method(Method::GET).a(students::read);
                         })
                         .resource("/{id}", |r| {
-                            r.method(Method::PUT).with_config(students::update, |cfg| {
+                            r.method(Method::PUT).with_async_config(students::update, |cfg| {
+                                (cfg.0).1.error_handler(&path_error_handler);
                                 (cfg.0).2.error_handler(&json_error_handler);
                             });
-                            r.method(Method::DELETE).with(students::delete);
+                            r.method(Method::DELETE).with_async_config(students::delete, |cfg| {
+                                (cfg.0).1.error_handler(&path_error_handler);
+                            });
                         })
                 }
             ).scope(
@@ -98,9 +116,11 @@ fn main() {
                 |login_scope| {
                     login_scope
                         .resource("", |r| {
-                             r.method(Method::POST).with(login::login);
+                            r.method(Method::POST).with_async_config(login::login, |cfg| {
+                                (cfg.0).1.error_handler(&json_error_handler);
+                            })
                         })
-                }            
+                }
             )
     });
 

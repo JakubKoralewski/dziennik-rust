@@ -4,7 +4,10 @@
 extern crate serde_derive;
 extern crate actix_web;
 
-use actix_web::actix::{Message, Handler};
+use actix_web::{
+    AsyncResponder,
+    actix::{Message, Handler}
+};
 use diesel;
 #[allow(unused_imports)] // Throws errors without this import, but throws warning with it :/
 use diesel::prelude::*;
@@ -58,18 +61,19 @@ pub struct User {
 /// This is the login handler
 /// 
 /// Returns empty response body. If found such user returns Response 200 OK. Else 400.
-pub fn login((request, credentials): (HttpRequest<State>, Json<LoginRequest>)) -> HttpResponse {
-    let found_users = request.state().db
+pub fn login((request, credentials): (HttpRequest<State>, Json<LoginRequest>)) 
+    -> Box<Future<Item = HttpResponse, Error = actix_web::Error>> {
+    request.state().db
         .send(credentials.into_inner())
-        .wait()
-        .expect("Future didn't resolve")
-        .expect("Error trying to get user from database")
-        .len();
-
-    if found_users == 0 {
-        HttpResponse::BadRequest().finish()
-    } else {
-        HttpResponse::Ok().finish()
-    }
-    
+        .from_err()
+        .and_then(|num_users_found| {
+            let num_users_found = num_users_found
+                .expect("Error finding login and password in database.")
+                .len();
+            if num_users_found == 0 {
+                Ok(HttpResponse::BadRequest().finish())
+            } else {
+                Ok(HttpResponse::Ok().finish())
+            }
+        }).responder()
 }

@@ -6,6 +6,8 @@ pub use actix_web::{
     HttpRequest,
     HttpResponse,
     Path,
+    AsyncResponder,
+    error
 };
 pub use futures::future::Future;
 

@@ -7,19 +7,21 @@ use super::imports::*;
 /// This is the create handler.
 /// 
 /// https://github.com/actix/actix-website/blob/master/content/docs/extractors.md#json
-pub fn create((request, new_student): (HttpRequest<State>, Json<CreateRequest>)) -> Json<CreateResponse> {
+pub fn create((request, new_student): (HttpRequest<State>, Json<CreateRequest>)) 
+    -> Box<Future<Item = Json<CreateResponse>, Error = actix_web::Error>> 
+{
     /* Add to database */
-
-    let new_student = request.state().db
+    request.state().db
         .send(new_student.into_inner())
-        .wait()
-        .expect("Future didn't resolve")
-        .expect("Error adding student in database");
-
-    println!("{:?}", new_student);
-
-    /* Create response */
-    Json(CreateResponse{message: "Success!".to_string(), new_student: Some(new_student)})
+        .from_err()
+        .and_then(|res| {
+            println!("{:?}", &res);
+            Ok(Json(CreateResponse {
+                message: "Success!".to_string(),
+                new_student: res.map_err(error::ErrorInternalServerError).ok()
+            }))
+        })
+        .responder()
 }
 
 /// id should be set automatically

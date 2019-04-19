@@ -4,15 +4,14 @@
 use super::*;
 use super::imports::*;
 
-pub fn read(request: &HttpRequest<State>) -> Json<Vec<Student>> {
-    //! Was helpful: https://docs.rs/actix-web/0.6.7/actix_web/struct.Json.html
-    let all_students = request.state().db
+pub fn read(request: &HttpRequest<State>) 
+    -> Box<Future<Item = Json<Vec<Student>>, Error = actix_web::Error>> 
+{
+    request.state().db
         .send(ReadRequest{})
-        .wait()
-        .expect("Future didn't resolve")
-        .expect("Error reading students from database");
-    
-    Json(all_students)
+        .from_err()
+        .and_then(|res| res.map(Json).map_err(error::ErrorInternalServerError))
+        .responder()
 }
 
 pub struct ReadRequest{}

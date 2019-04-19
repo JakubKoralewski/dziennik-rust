@@ -4,7 +4,7 @@
 -->
 # dziennik-rust
 
-A simple CRUD backend application using Rust with actix-web, Diesel and PostgreSQL.
+A simple CRUD REST API backend application using Rust with actix-web, Diesel and PostgreSQL.
 
 ## Develop
 
