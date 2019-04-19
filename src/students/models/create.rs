@@ -19,7 +19,7 @@ pub fn create((request, new_student): (HttpRequest<State>, Json<CreateRequest>))
             info!("Successfully added student");
             Ok(Json(CreateResponse {
                 message: "Success!".to_string(),
-                new_student: res.map_err(error::ErrorInternalServerError).ok()
+                student: res.map_err(error::ErrorInternalServerError).ok()
             }))
         })
         .responder()
@@ -38,7 +38,7 @@ pub struct CreateRequest {
 #[derive(Serialize)]
 pub struct CreateResponse {
     pub message: String,
-    pub new_student: Option<Student>
+    pub student: Option<Student>
 }
 
 impl Message for CreateRequest {
