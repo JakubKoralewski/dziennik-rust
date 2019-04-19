@@ -2,7 +2,7 @@
   MIT License
   Copyright (c) 2019 Jakub Koralewski
 -->
-# dziennik-rust
+# dziennik-rust [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
 
 A simple CRUD REST API backend application using Rust with actix-web, Diesel and PostgreSQL.
 
