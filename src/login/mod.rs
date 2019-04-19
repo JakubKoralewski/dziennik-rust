@@ -13,6 +13,9 @@ use diesel;
 use diesel::prelude::*;
 use futures::future::Future;
 
+#[allow(unused_imports)] // it's useful to have these in scope
+use log::{debug, error, info, warn};
+
 use crate::database::Database;
 //use crate::schema::users;
 use crate::State;
@@ -63,6 +66,10 @@ pub struct User {
 /// Returns empty response body. If found such user returns Response 200 OK. Else 400.
 pub fn login((request, credentials): (HttpRequest<State>, Json<LoginRequest>)) 
     -> Box<Future<Item = HttpResponse, Error = actix_web::Error>> {
+    debug!(
+        "Request to login with credentials:\nlogin: {}, password: {}.",
+        credentials.login.as_str(), credentials.password.as_str()
+    );
     request.state().db
         .send(credentials.into_inner())
         .from_err()
@@ -71,8 +78,10 @@ pub fn login((request, credentials): (HttpRequest<State>, Json<LoginRequest>))
                 .expect("Error finding login and password in database.")
                 .len();
             if num_users_found == 0 {
+                warn!("Login credentials not found!");
                 Ok(HttpResponse::BadRequest().finish())
             } else {
+                debug!("User successfully logged in!");
                 Ok(HttpResponse::Ok().finish())
             }
         }).responder()

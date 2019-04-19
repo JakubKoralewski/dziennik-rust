@@ -3,11 +3,20 @@
 
 extern crate actix_web;
 extern crate listenfd;
+extern crate pretty_env_logger;
+extern crate env_logger;
 #[macro_use] extern crate serde_derive;
 extern crate sentry_actix;
 #[macro_use] extern crate diesel;
 
-use sentry_actix::SentryMiddleware;
+use sentry::{Hub, Level};
+use std::default::Default;
+use sentry_actix::{SentryMiddleware, ActixWebHubExt};
+
+#[allow(unused_imports)] // it's useful to have these in scope
+use log::{debug, error, info, warn};
+use env_logger::Target;
+
 use listenfd::ListenFd;
 use actix_web::{
     server, 
@@ -39,8 +48,14 @@ struct JsonError {
 
 /// Handles returning info to client about errors
 /// regarding the json request body.
-fn json_error_handler(err: error::JsonPayloadError, _req: &HttpRequest<State>) -> error::Error {
-    let description = JsonError{message: format!("{}", err)};
+fn json_error_handler(err: error::JsonPayloadError, req: &HttpRequest<State>) -> error::Error {
+    error!("Bad json data: {:?}", &err);
+    let message = format!("{}", err);
+    
+    let hub = Hub::from_request(req);
+    hub.capture_message(message.as_str(), Level::Error);
+
+    let description = JsonError{message};
     error::InternalError::from_response(
         err, HttpResponse::BadRequest().json(description)
     ).into()
@@ -48,8 +63,15 @@ fn json_error_handler(err: error::JsonPayloadError, _req: &HttpRequest<State>) -
 
 /// Handles returning info to client about errors
 /// regarding the id supplied in the path.
-fn path_error_handler(err: serde::de::value::Error, _req: &HttpRequest<State>) -> error::Error {
-    let description = JsonError{message: format!("{}", err)};
+fn path_error_handler(err: serde::de::value::Error, req: &HttpRequest<State>) -> error::Error {
+    error!("Bad path id: {:?}", &err);
+    
+    let message = format!("{}", err);
+    
+    let hub = Hub::from_request(req);
+    hub.capture_message(message.as_str(), Level::Error);
+
+    let description = JsonError{message};
     error::InternalError::from_response(
         err, HttpResponse::BadRequest().json(description)
     ).into()
@@ -63,17 +85,23 @@ fn main() {
     /* Environment variables */
     dotenv().ok();
     env::set_var("RUST_BACKTRACE", "1");
-    env::set_var("RUST_LOG", "actix_web=debug,info,warn");
+    const RUST_LOG: &'static str = "debug, actix_web=debug";
+    env::set_var("RUST_LOG", &RUST_LOG);
+    let mut log_builder = pretty_env_logger::formatted_builder();
 
     /* Sentry */
     let _sentry;
     if let Ok(dsn) = env::var("SENTRY_DSN") {
         _sentry = sentry::init(dsn);
+        sentry::integrations::env_logger::init(
+            Some(log_builder.parse_filters(&RUST_LOG).target(Target::Stdout).build()),
+            Default::default()
+        );
         sentry::integrations::panic::register_panic_handler();
     }
 
     const IP_PORT: &str = "127.0.0.1:3000";
-    println!("Listening on {}", &IP_PORT);
+    debug!("Listening on {}", &IP_PORT);
 
     /* Setup autoreload */
     let mut listenfd = ListenFd::from_env();

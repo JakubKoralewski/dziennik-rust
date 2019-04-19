@@ -7,6 +7,7 @@ use super::imports::*;
 pub fn read(request: &HttpRequest<State>) 
     -> Box<Future<Item = Json<Vec<Student>>, Error = actix_web::Error>> 
 {
+    debug!("Request to read all students.");
     request.state().db
         .send(ReadRequest{})
         .from_err()
@@ -26,7 +27,6 @@ impl Handler<ReadRequest> for Database {
     fn handle(&mut self, _msg: ReadRequest, _: &mut Self::Context) -> Self::Result {
         use crate::schema::students::dsl::*;
         let conn = self.0.get().unwrap();
-        println!("Reading all students.");
         students.order(id).load::<Student>(&conn)
     }
 }

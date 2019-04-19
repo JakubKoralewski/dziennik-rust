@@ -10,12 +10,13 @@ use super::imports::*;
 pub fn create((request, new_student): (HttpRequest<State>, Json<CreateRequest>)) 
     -> Box<Future<Item = Json<CreateResponse>, Error = actix_web::Error>> 
 {
+    debug!("Request to create student: {:?}", &new_student);
     /* Add to database */
     request.state().db
         .send(new_student.into_inner())
         .from_err()
         .and_then(|res| {
-            println!("{:?}", &res);
+            info!("Successfully added student");
             Ok(Json(CreateResponse {
                 message: "Success!".to_string(),
                 new_student: res.map_err(error::ErrorInternalServerError).ok()

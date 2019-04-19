@@ -9,6 +9,7 @@ pub use actix_web::{
     AsyncResponder,
     error
 };
+pub use log::{debug, error, info, warn};
 pub use futures::future::Future;
 
 pub use crate::State;
