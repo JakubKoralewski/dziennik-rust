@@ -5,7 +5,12 @@
     "success_url": "/",
     "keywords": ["rust", "actix", "actix-web", "dziennik", "diesel", "postgresql"],
     "website": "https://dziennik.netlify.com",
-    "env": {
-        "BUILDPACK_URL": "https://github.com/emk/heroku-buildpack-rust.git"
-    }
+    "buildpacks": [
+        {
+            "url": "https://github.com/heroku/heroku-buildpack-apt"
+        },
+        {
+            "url": "https://github.com/emk/heroku-buildpack-rust.git"
+        }
+    ]
 }
