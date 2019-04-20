@@ -102,7 +102,7 @@ fn main() {
     
     let mut IP_PORT = "127.0.0.1:".to_string();
     if let Ok(port) = env::var("PORT") {
-        IP_PORT.push_str(port);
+        IP_PORT.push_str(&port);
     } else {
         IP_PORT.push_str("3000");
     }
