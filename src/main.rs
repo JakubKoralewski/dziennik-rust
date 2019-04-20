@@ -99,9 +99,15 @@ fn main() {
         );
         sentry::integrations::panic::register_panic_handler();
     }
+    
+    let mut IP_PORT = "127.0.0.1:".to_string();
+    if let Ok(port) = env::var("PORT") {
+        IP_PORT.push_str(&port);
+    } else {
+        IP_PORT.push_str("3000");
+    }
 
-    const IP_PORT: &str = "127.0.0.1:3000";
-    debug!("Listening on {}", &IP_PORT);
+    debug!("Listening on {}", IP_PORT.as_str());
 
     /* Setup autoreload */
     let mut listenfd = ListenFd::from_env();
@@ -156,7 +162,7 @@ fn main() {
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
         server.listen(l)
     } else {
-        server.bind(&IP_PORT).unwrap()
+        server.bind(IP_PORT.as_str()).unwrap()
     };
 
     server.run();
