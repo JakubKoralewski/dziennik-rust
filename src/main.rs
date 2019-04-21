@@ -107,7 +107,7 @@ fn main() {
         .expect("PORT must be a number");
     
 
-    debug!("Listening on {}", IP_PORT.as_str());
+    debug!("Listening on {}:{}", &IP, &PORT);
 
     /* Setup autoreload */
     let mut listenfd = ListenFd::from_env();
