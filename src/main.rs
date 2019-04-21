@@ -26,6 +26,7 @@ use actix_web::{
     error,
     HttpRequest,
     HttpResponse,
+    middleware::cors::Cors,
     actix::{
         SyncArbiter,
         Addr,
@@ -100,14 +101,14 @@ fn main() {
         sentry::integrations::panic::register_panic_handler();
     }
     
-    let IP = "0.0.0.0";
-    let PORT = env::var("PORT")
+    let ip: &str = "0.0.0.0";
+    let port: u16 = env::var("PORT")
         .unwrap_or_else(|_| "3000".to_string())
         .parse()
         .expect("PORT must be a number");
     
 
-    debug!("Listening on {}:{}", &IP, &PORT);
+    debug!("Listening on {}:{}", &ip, &port);
 
     /* Setup autoreload */
     let mut listenfd = ListenFd::from_env();
@@ -125,44 +126,39 @@ fn main() {
             .middleware(SentryMiddleware::new())
             .middleware(middleware::Logger::default())
             .prefix("/api")
-            .scope(
-                "/students",
-                |students_scope| {
-                    students_scope
-                        .resource("", |r| {
-                            r.method(Method::POST).with_async_config(students::create, |cfg| {
-                                (cfg.0).1.error_handler(&json_error_handler);
-                            });
-                            r.method(Method::GET).a(students::read);
+            .configure(|app| {
+                Cors::for_app(app)
+                    .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+                    .max_age(3600)
+                    .resource("/students", |r| {
+                        r.method(Method::POST).with_async_config(students::create, |cfg| {
+                            (cfg.0).1.error_handler(&json_error_handler);
+                        });
+                        r.method(Method::GET).a(students::read);
+                    })
+                    .resource("/students/{id}", |r| {       // register resource
+                        r.method(Method::PUT).with_async_config(students::update, |cfg| {
+                            (cfg.0).1.error_handler(&path_error_handler);
+                            (cfg.0).2.error_handler(&json_error_handler);
+                        });
+                        r.method(Method::DELETE).with_async_config(students::delete, |cfg| {
+                            (cfg.0).1.error_handler(&path_error_handler);
+                        });
+                    })
+                    .resource("/login", |r| {       // register resource
+                        r.method(Method::POST).with_async_config(login::login, |cfg| {
+                            (cfg.0).1.error_handler(&json_error_handler);
                         })
-                        .resource("/{id}", |r| {
-                            r.method(Method::PUT).with_async_config(students::update, |cfg| {
-                                (cfg.0).1.error_handler(&path_error_handler);
-                                (cfg.0).2.error_handler(&json_error_handler);
-                            });
-                            r.method(Method::DELETE).with_async_config(students::delete, |cfg| {
-                                (cfg.0).1.error_handler(&path_error_handler);
-                            });
-                        })
-                }
-            ).scope(
-                "/login",
-                |login_scope| {
-                    login_scope
-                        .resource("", |r| {
-                            r.method(Method::POST).with_async_config(login::login, |cfg| {
-                                (cfg.0).1.error_handler(&json_error_handler);
-                            })
-                        })
-                }
-            )
+                    })
+                    .register()
+            })
     });
 
     // For auto-reload
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
         server.listen(l)
     } else {
-        server.bind((IP,PORT)).unwrap()
+        server.bind((ip, port)).unwrap()
     };
 
     server.run();
