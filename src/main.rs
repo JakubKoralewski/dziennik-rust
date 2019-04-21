@@ -100,12 +100,12 @@ fn main() {
         sentry::integrations::panic::register_panic_handler();
     }
     
-    let mut IP_PORT = "127.0.0.1:".to_string();
-    if let Ok(port) = env::var("PORT") {
-        IP_PORT.push_str(&port);
-    } else {
-        IP_PORT.push_str("3000");
-    }
+    let IP = "0.0.0.0";
+    let PORT = env::var("PORT")
+        .unwrap_or_else(|_| "3000".to_string())
+        .parse()
+        .expect("PORT must be a number");
+    
 
     debug!("Listening on {}", IP_PORT.as_str());
 
@@ -162,7 +162,7 @@ fn main() {
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
         server.listen(l)
     } else {
-        server.bind(IP_PORT.as_str()).unwrap()
+        server.bind((IP,PORT)).unwrap()
     };
 
     server.run();
