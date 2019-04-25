@@ -39,7 +39,7 @@ $ cargo run-script dev
         - edit existing student
 
 ## Notes:
-- *inspired* by:
+- *inspired* by a full fetched project:
   - https://github.com/ryanmcgrath/jelly
 - https://circleci.com/blog/publishing-to-github-releases-via-circleci/
 - actix:
@@ -50,7 +50,6 @@ $ cargo run-script dev
     - PostgreSQL:
       - https://github.com/actix/examples/tree/master/actix_todo
         - actix, postgresql, tera for templates, diesel for ORM
-  - full fetched project:
 - diesel:
   - official Getting Started Guide:
     - https://diesel.rs/guides/getting-started/
